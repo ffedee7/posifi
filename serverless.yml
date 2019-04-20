@@ -4,32 +4,31 @@ custom:
   serviceId: ${self:service}-${opt:stage, 'dev'}
   aiBucketName: ${self:custom.serviceId}.ai
 
-# General settings
 provider:
   name: aws
   runtime: python3.7
   region: sa-east-1
-  # Environment variables shared across all the resources
   environment:
-      # Export the service id name
       serviceId: ${self:service}
-      # Export the bucket name to the environment
       aiBucketName: ${self:custom.aiBucketName}
-      # Export the current stage, default to dev
       stage: ${opt:stage, 'dev'}
-      # Export the AWS region
       region: ${self:provider.region}
       PYTHONPATH: '/var/task/:/var/runtime:/opt'
 
-  # Give read access to the SSM to all the resources
+      DYNAMODB_FINGERPRINTS: ${self:service}-${opt:stage, 'dev'}-fingerprints
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_FINGERPRINTS}"
+
   iamManagedPolicies:
     - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
-  # Give access to the Partners DB to all resources
-  # iamRoleStatements:
-  #   - Effect: "Allow"
-  #     Action:
-  #       - rds:*
-  #     Resource: "arn:aws:rds:us-west-2:186309585885:db:partners-${opt:stage, 'dev'}"
 
 resources:
   Resources:
@@ -39,6 +38,21 @@ resources:
       Properties:
         BucketName: ${self:custom.aiBucketName}
         AccessControl: Private
+
+    FingerprintsTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: timestamp
+            AttributeType: N
+        KeySchema:
+          -
+            AttributeName: timestamp
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:provider.environment.DYNAMODB_FINGERPRINTS}
 
 layers:
   Requirements:
@@ -58,34 +72,47 @@ functions:
     handler: lambda_handlers/train_models.run
     layers:
         - {Ref: RequirementsLambdaLayer}
-    timeout: 300
+    timeout: 900
     package:
       include:
         - lambda_handlers/train_models.py
         - commons/**
       exclude:
         - '**'
-    # environment:
-    #   anyLambdaName: ${self:custom.serviceId}-lambda-name
     events:
       - http:
           path: train
           method: get
+          async: true
 
-  classify:
-    handler: lambda_handlers/classify.run
+  localize:
+    handler: lambda_handlers/localize.run
     layers:
         - {Ref: RequirementsLambdaLayer}
-    timeout: 300
+    timeout: 30
     package:
       include:
-        - lambda_handlers/classify.py
+        - lambda_handlers/localize.py
         - commons/**
       exclude:
         - '**'
-    # environment:
-    #   anyLambdaName: ${self:custom.serviceId}-lambda-name
     events:
       - http:
-          path: classify
+          path: localize
+          method: post
+
+  add-fingerprint:
+    handler: lambda_handlers/add_fingerprint.run
+    layers:
+        - {Ref: RequirementsLambdaLayer}
+    timeout: 30
+    package:
+      include:
+        - lambda_handlers/add_fingerprint.py
+        - commons/**
+      exclude:
+        - '**'
+    events:
+      - http:
+          path: fingerprint
           method: post
