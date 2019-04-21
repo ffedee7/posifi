@@ -1,13 +1,20 @@
-import os
+import json
+
 from commons.logger import logged
+from commons.ai_engine import AIEngine
 
 @logged(truncate_long_messages=False)
-def run(fingerprint, context):
+def run(event, context):
     """
-    This lambda will add a fingerprint to the DynamoDB table
-    Where the train data is stored.
+    This lambda will train all the required models.
     """
 
-    return {
-        'statusCode': 200
-    }
+    try:
+        body = json.loads(event['body'])
+    except:
+        body = event['body']
+        
+    has_5_ghz = body.get('has_5_ghz', False)
+
+    ai_engine = AIEngine(has_5_ghz)
+    ai_engine.train()

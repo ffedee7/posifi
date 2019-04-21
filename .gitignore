@@ -102,3 +102,20 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+.serverless
+
+yarn.lock
+*.yarn-integrity
+
+.DS_Store
+.requirements.lock
+.requirements
+
+.vscode
+
+node_modules/
+
+*/settings.json
+
+package*.json

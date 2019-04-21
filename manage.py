@@ -137,6 +137,8 @@ def _check_requirements():
 
         os.system("docker run -v \"$PWD\":/var/task -it lambci/lambda:build-python3.7 "
                   "pip install v -r .requirements.lock -t .requirements")
+        
+        os.system('find .requirements -name "*.py[c|o]" -delete -empty -or -name "*.dist-info*" -exec rm -r "{}" \; -or -name "*__pycache__*" -delete')
 
 
 if __name__ == "__main__":
