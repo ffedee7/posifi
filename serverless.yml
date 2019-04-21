@@ -2,7 +2,6 @@ service: posifi
 
 custom:
   serviceId: ${self:service}-${opt:stage, 'dev'}
-  aiBucketName: ${self:custom.serviceId}.ai
 
 provider:
   name: aws
@@ -10,11 +9,11 @@ provider:
   region: sa-east-1
   environment:
       serviceId: ${self:service}
-      aiBucketName: ${self:custom.aiBucketName}
       stage: ${opt:stage, 'dev'}
       region: ${self:provider.region}
       PYTHONPATH: '/var/task/:/var/runtime:/opt'
 
+      AI_BUCKET_NAME: ${self:custom.serviceId}.ai
       DYNAMODB_FINGERPRINTS: ${self:service}-${opt:stage, 'dev'}-fingerprints
   iamRoleStatements:
     - Effect: Allow
@@ -36,7 +35,7 @@ resources:
     AIBucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: ${self:custom.aiBucketName}
+        BucketName: ${self:provider.environment.AI_BUCKET_NAME}
         AccessControl: Private
 
     FingerprintsTable:
@@ -82,7 +81,7 @@ functions:
     events:
       - http:
           path: train
-          method: get
+          method: post
           async: true
 
   localize:

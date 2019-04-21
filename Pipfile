@@ -8,11 +8,10 @@ pylint = "*"
 click = "*"
 
 [packages]
-boto3 = "*"
-awscli = "*"
 dynamodb-json = "*"
 pandas = "*"
 python-json-logger = "*"
+sklearn = "*"
 
 [requires]
 python_version = "3.7"

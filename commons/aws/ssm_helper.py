@@ -1,5 +1,7 @@
 import boto3
 
+from commons.aws.aws_common import paginate
+
 ssm_client = boto3.session.Session().client('ssm')
 
 
@@ -32,12 +34,3 @@ def get_parameters_by_path(path='/'):
 
 def get_all_parameters():
     return get_parameters_by_path('')
-
-def paginate(method, **kwargs):
-    client = method.__self__
-    paginator = client.get_paginator(method.__name__)
-    return (
-        result
-        for page in paginator.paginate(**kwargs).result_key_iters()
-        for result in page
-    )
