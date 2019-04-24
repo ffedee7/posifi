@@ -17,11 +17,12 @@ def run(event, context):
 
     fingeprint = ai_engine.prepare_fingerprint(body)
 
-    location_label = ai_engine.localize_fingerprint(fingeprint)
+    location_label, probabilities = ai_engine.localize_fingerprint(fingeprint)
 
     return {
         'body': json.dumps({
-            'location': location_label
+            'location': location_label,
+            'probabilities': probabilities
         }),
         'statusCode': 200
     }
