@@ -4,7 +4,7 @@ from threading import Thread
 
 import numpy as np
 from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
-from sklearn.metrics import classification_report, precision_score
+from sklearn.metrics import classification_report, precision_score, balanced_accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
@@ -108,30 +108,32 @@ class AIEngine():
         return headers_dict
 
     @logged
-    def youden_statistic(self, y_actual, y_hat):
-        TP = 0
-        FP = 0
-        TN = 0
-        FN = 0
-        for i in range(len(y_hat)): 
-            if y_actual[i]==y_hat[i]==1:
-                TP += 1
-            if y_hat[i]==1 and y_actual[i]!=y_hat[i]:
-                FP += 1
-            if y_actual[i]==y_hat[i]==0:
-                TN += 1
-            if y_hat[i]==0 and y_actual[i]!=y_hat[i]:
-                FN += 1
+    def youden_statistic(self, y_test, y_hat):
+        return balanced_accuracy_score(y_test, y_hat, adjusted=True)
 
-        sensitivity = 0
-        if TP + FN != 0:
-            sensitivity = TP / (TP + FN)
+        # TP = 0
+        # FP = 0
+        # TN = 0
+        # FN = 0
+        # for i in range(len(y_hat)): 
+        #     if y_test[i]==y_hat[i]==1:
+        #         TP += 1
+        #     if y_hat[i]==1 and y_test[i]!=y_hat[i]:
+        #         FP += 1
+        #     if y_test[i]==y_hat[i]==0:
+        #         TN += 1
+        #     if y_hat[i]==0 and y_test[i]!=y_hat[i]:
+        #         FN += 1
 
-        specificity = 0
-        if TN + FP != 0:
-            specificity = TN / (TN + FP)
+        # sensitivity = 0
+        # if TP + FN != 0:
+        #     sensitivity = TP / (TP + FN)
 
-        return specificity + sensitivity - 1 
+        # specificity = 0
+        # if TN + FP != 0:
+        #     specificity = TN / (TN + FP)
+
+        # return specificity + sensitivity - 1 
 
     @logged
     def train(self):
@@ -167,7 +169,7 @@ class AIEngine():
         self.save_context()
 
     def save_train_stats(self, X_val, y_val):
-        y_final = self.classify(X_val)
+        y_final, _ = self.classify(X_val)
 
         labels = list(self.label_mapping['from'].keys())
 
@@ -206,13 +208,13 @@ class AIEngine():
         probabilities = np.zeros(shape)
 
         for model_name, model_result in model_results.items():
-            probabilities = probabilities + np.matrix(model_result) * self.youden_indexes[model_name]
+            probabilities = probabilities + model_result * self.youden_indexes[model_name]
+
+        probabilities = probabilities / len(model_results)
 
         y_final = np.argmax(probabilities, axis=1)
-
-        y_final = np.asarray(y_final).reshape(-1)
         
-        return y_final
+        return y_final, probabilities
 
     def prepare_fingerprint(self, raw_fingerprint):
         fingerprint = np.zeros(len(self.headers)) + FINGERPRINT_NULL_VALUE
@@ -241,6 +243,15 @@ class AIEngine():
         
     @logged
     def localize_fingerprint(self, fingerprint):
-        classification = self.classify(fingerprint)[0]
+        classification, raw_probabilities = self.classify(fingerprint)
 
-        return self.label_mapping['to'][classification]
+        classification = classification[0]
+        raw_probabilities = raw_probabilities[0]
+
+
+        probabilities = {
+            self.label_mapping['to'][index]: probability
+            for index, probability in enumerate(raw_probabilities)
+        }
+
+        return self.label_mapping['to'][classification], probabilities

@@ -25,6 +25,11 @@ provider:
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
       Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_FINGERPRINTS}"
+    - Effect: "Allow"
+      Action:
+        - "s3:*"
+      Resource:
+          - "arn:aws:s3:::*"
 
   iamManagedPolicies:
     - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
