@@ -85,7 +85,7 @@ functions:
         - '**'
     events:
       - http:
-          path: train
+          path: train_models
           method: post
           async: true
 
