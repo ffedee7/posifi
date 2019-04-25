@@ -73,7 +73,9 @@ class AIEngine():
         dynamo_data = get_all_elements_from_table(FINGERPRINT_TABLE)
         filtered_macs = MACS_5GHZ + MACS_2_4GHZ if self.is_5ghz else MACS_2_4GHZ
 
-        X = dynamo_data[filtered_macs].fillna(FINGERPRINT_NULL_VALUE)
+        X = dynamo_data.reindex(columns=filtered_macs)
+
+        X = X[filtered_macs].fillna(FINGERPRINT_NULL_VALUE)
 
         self.headers = self.create_headers(list(X))
 
@@ -220,6 +222,7 @@ class AIEngine():
         fingerprint = np.zeros(len(self.headers)) + FINGERPRINT_NULL_VALUE
 
         filtered_macs = MACS_5GHZ + MACS_2_4GHZ if self.is_5ghz else MACS_2_4GHZ
+        filtered_macs = [mac for mac in filtered_macs if mac in self.headers.keys()]
 
         wifi_fingerprint = {
             mac:rss 
