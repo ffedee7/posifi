@@ -5,7 +5,7 @@ import json
 
 from commons.logger import logged
 
-S3_CLIENT = boto3.session.Session().client('s3')
+S3_CLIENT = boto3.session.Session().client('s3', region_name='sa-east-1')
 
 
 def get_file(bucket_name, key):
