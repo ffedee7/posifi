@@ -1,40 +1,24 @@
-<h1 align="center">Welcome to posifi 👋</h1>
-<p>
-  <a href="https://twitter.com/agusnavce">
-    <img alt="Twitter: agusnavce" src="https://img.shields.io/twitter/follow/agusnavce.svg?style=social" target="_blank" />
-  </a>
-</p>
+[![Version 1.0](https://img.shields.io/badge/version-3.3.0-brightgreen.svg?style=for-the-badge)](https://github.com/schollz/POSIFI/releases/latest) 
 
-> Scalable Indoor Localization API
+**Scalable Indoor Localization API** (_POSIFI_) is like indoor GPS for your house or business, using only a simple smartphone or laptop.
 
-## Install
+# About the project
 
-```sh
-npm install
-```
+- Support for two data sources - Bluetooth / WiFi 
 
-## Usage
 
-```sh
-S
-```
+# Status
 
-## Run tests
+*POSIFI* is stable and ready for use.
 
-```sh
-d
-```
+# Contributing
 
-## Author
+*POSIFI* is a framework with multiple components. There are multiple repositories that have the components, including:
 
-👤 **Agustin Navcevich**
+## Reporting issues
 
-* Twitter: [@agusnavce](https://twitter.com/agusnavce)
-* Github: [@agusnavce](https://github.com/agusnavce)
+Please report issues through [this repo's issue tracker](https://github.com/ffedee7/posifi).
 
-## Show your support
+# License 
 
-Give a ⭐️ if this project helped you!
-
-***
-_This README was generated with ❤️ by [readme-md-generator](https://github.com/kefranabg/readme-md-generator)_
+MIT
