@@ -14,7 +14,12 @@ provider:
     PYTHONPATH: '/var/task/:/var/runtime:/opt'
     AI_BUCKET_NAME: ${self:custom.serviceId}.ai
     DYNAMODB_FINGERPRINTS: ${self:service}-${opt:stage, 'dev'}-fingerprints
-    DYNAMODB_INFORMATION: ${self:service}-${opt:stage, 'dev'}-information
+    SETTINGS: ${env: IMPORT_SETTINGS, false}
+    MAC_WHITELIST: ${env: MAC_WHITELIST, ""}
+    FILTER: ${env: FILTER_MACS, false}
+    MACS_5GHZ: ${env: MACS_5GHZ, ""}
+    MACS_2_4GHZ: ${env: MACS_2_4GHZ, ""}
+
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -26,7 +31,6 @@ provider:
         - dynamodb:DeleteItem
       Resource:
         - 'arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_FINGERPRINTS}'
-        - 'arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_INFORMATION}'
     - Effect: 'Allow'
       Action:
         - 's3:*'
@@ -83,78 +87,14 @@ package:
   excludeDevDependencies: false
 
 functions:
-  get-information:
-    handler: lambda_handlers/get_information.run
-    layers:
-      - { Ref: RequirementsLambdaLayer }
-    timeout: 30
-    package:
-      include:
-        - lambda_handlers/get_information.py
-        - commons/**
-      exclude:
-        - '**'
-    events:
-      - http:
-          path: information/{id}
-          method: get
-
-  list-information:
-    handler: lambda_handlers/list_information.run
-    layers:
-      - { Ref: RequirementsLambdaLayer }
-    timeout: 30
-    package:
-      include:
-        - lambda_handlers/list_information.py
-        - commons/**
-      exclude:
-        - '**'
-    events:
-      - http:
-          path: information
-          method: get
-
-  create-information:
-    handler: lambda_handlers/create_information.run
-    layers:
-      - { Ref: RequirementsLambdaLayer }
-    timeout: 30
-    package:
-      include:
-        - lambda_handlers/create_information.py
-        - commons/**
-      exclude:
-        - '**'
-    events:
-      - http:
-          path: information
-          method: post
-
-  delete-information:
-    handler: lambda_handlers/delete_information.run
-    layers:
-      - { Ref: RequirementsLambdaLayer }
-    timeout: 30
-    package:
-      include:
-        - lambda_handlers/delete_information.py
-        - commons/**
-      exclude:
-        - '**'
-    events:
-      - http:
-          path: information/{id}
-          method: delete
-
   train-models:
-    handler: lambda_handlers/train_models.run
+    handler: lambda_handlers/localization/train_models.run
     layers:
       - { Ref: RequirementsLambdaLayer }
     timeout: 900
     package:
       include:
-        - lambda_handlers/train_models.py
+        - lambda_handlers/localization/train_models.py
         - commons/**
       exclude:
         - '**'
@@ -165,13 +105,13 @@ functions:
           async: true
 
   localize:
-    handler: lambda_handlers/localize.run
+    handler: lambda_handlers/localization/localize.run
     layers:
       - { Ref: RequirementsLambdaLayer }
     timeout: 30
     package:
       include:
-        - lambda_handlers/localize.py
+        - lambda_handlers/localization/localize.py
         - commons/**
       exclude:
         - '**'
@@ -181,7 +121,7 @@ functions:
           method: post
 
   add-fingerprint:
-    handler: lambda_handlers/add_fingerprint.run
+    handler: lambda_handlers/localization/add_fingerprint.run
     layers:
       - { Ref: RequirementsLambdaLayer }
     timeout: 30
