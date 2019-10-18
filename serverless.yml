@@ -19,6 +19,7 @@ provider:
     FILTER: ${env: FILTER_MACS, false}
     MACS_5GHZ: ${env: MACS_5GHZ, ""}
     MACS_2_4GHZ: ${env: MACS_2_4GHZ, ""}
+
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -59,6 +60,19 @@ resources:
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
         TableName: ${self:provider.environment.DYNAMODB_FINGERPRINTS}
+
+    InformationDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:provider.environment.DYNAMODB_INFORMATION}
 
 layers:
   Requirements:

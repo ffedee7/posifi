@@ -7,6 +7,7 @@ from dynamodb_json import json_util as json_d
 client = boto3.client('dynamodb', region_name='sa-east-1')
 
 
+
 def get_all_elements_from_table(table_name):
     paginator = client.get_paginator('scan')
     operation_parameters = {
