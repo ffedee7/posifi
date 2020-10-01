@@ -8,13 +8,18 @@ provider:
   runtime: python3.7
   region: sa-east-1
   environment:
-      serviceId: ${self:service}
-      stage: ${opt:stage, 'dev'}
-      region: ${self:provider.region}
-      PYTHONPATH: '/var/task/:/var/runtime:/opt'
+    serviceId: ${self:service}
+    stage: ${opt:stage, 'dev'}
+    region: ${self:provider.region}
+    PYTHONPATH: '/var/task/:/var/runtime:/opt'
+    AI_BUCKET_NAME: ${self:custom.serviceId}.ai
+    DYNAMODB_FINGERPRINTS: ${self:service}-${opt:stage, 'dev'}-fingerprints
+    SETTINGS: ${env: IMPORT_SETTINGS, false}
+    MAC_WHITELIST: ${env: MAC_WHITELIST, ""}
+    FILTER: ${env: FILTER_MACS, false}
+    MACS_5GHZ: ${env: MACS_5GHZ, ""}
+    MACS_2_4GHZ: ${env: MACS_2_4GHZ, ""}
 
-      AI_BUCKET_NAME: ${self:custom.serviceId}.ai
-      DYNAMODB_FINGERPRINTS: ${self:service}-${opt:stage, 'dev'}-fingerprints
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -24,19 +29,19 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_FINGERPRINTS}"
-    - Effect: "Allow"
-      Action:
-        - "s3:*"
       Resource:
-          - "arn:aws:s3:::*"
+        - 'arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_FINGERPRINTS}'
+    - Effect: 'Allow'
+      Action:
+        - 's3:*'
+      Resource:
+        - 'arn:aws:s3:::*'
 
   iamManagedPolicies:
     - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
 
 resources:
   Resources:
-
     AIBucket:
       Type: AWS::S3::Bucket
       Properties:
@@ -48,19 +53,30 @@ resources:
       DeletionPolicy: Retain
       Properties:
         AttributeDefinitions:
-          -
-            AttributeName: timestamp
+          - AttributeName: timestamp
             AttributeType: N
         KeySchema:
-          -
-            AttributeName: timestamp
+          - AttributeName: timestamp
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
         TableName: ${self:provider.environment.DYNAMODB_FINGERPRINTS}
 
+    InformationDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:provider.environment.DYNAMODB_INFORMATION}
+
 layers:
   Requirements:
-    path: .requirements 
+    path: .requirements
     name: ${self:custom.serviceId}-requirements-layer
     description: This Layer contains the python requirements for all lambdas.
     compatibleRuntimes:
@@ -71,15 +87,14 @@ package:
   excludeDevDependencies: false
 
 functions:
-
   train-models:
-    handler: lambda_handlers/train_models.run
+    handler: lambda_handlers/localization/train_models.run
     layers:
-        - {Ref: RequirementsLambdaLayer}
+      - { Ref: RequirementsLambdaLayer }
     timeout: 900
     package:
       include:
-        - lambda_handlers/train_models.py
+        - lambda_handlers/localization/train_models.py
         - commons/**
       exclude:
         - '**'
@@ -90,13 +105,13 @@ functions:
           async: true
 
   localize:
-    handler: lambda_handlers/localize.run
+    handler: lambda_handlers/localization/localize.run
     layers:
-        - {Ref: RequirementsLambdaLayer}
+      - { Ref: RequirementsLambdaLayer }
     timeout: 30
     package:
       include:
-        - lambda_handlers/localize.py
+        - lambda_handlers/localization/localize.py
         - commons/**
       exclude:
         - '**'
@@ -106,9 +121,9 @@ functions:
           method: post
 
   add-fingerprint:
-    handler: lambda_handlers/add_fingerprint.run
+    handler: lambda_handlers/localization/add_fingerprint.run
     layers:
-        - {Ref: RequirementsLambdaLayer}
+      - { Ref: RequirementsLambdaLayer }
     timeout: 30
     package:
       include:

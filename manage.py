@@ -84,9 +84,11 @@ def download_params(stage):
 @posifi.command(name="deploy")
 @click.option("-f", "--function-name", help="function name")
 @click.option("-s", "--stage", default="dev", help="Stage ['dev'(def), 'prod']")
-def deploy_api(function_name, stage):
+@click.option("-i", "--import_settings", default="false", help="Import [true, false]")
+def deploy_api(function_name, stage, import_settings):
 
-    _download_settings_from_ssm(stage, include_commit_hash=True)
+    if import_settings:
+        _download_settings_from_ssm(stage, include_commit_hash=True)
 
     _check_requirements()
 
