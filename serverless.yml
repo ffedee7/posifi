@@ -12,9 +12,9 @@ provider:
       stage: ${opt:stage, 'dev'}
       region: ${self:provider.region}
       PYTHONPATH: '/var/task/:/var/runtime:/opt'
-
       AI_BUCKET_NAME: ${self:custom.serviceId}.ai
       DYNAMODB_FINGERPRINTS: ${self:service}-${opt:stage, 'dev'}-fingerprints
+      DYNAMODB_INFORMATION: ${self:service}-${opt:stage, 'dev'}-information
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -24,7 +24,9 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_FINGERPRINTS}"
+      Resource: 
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_FINGERPRINTS}"
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_INFORMATION}"
     - Effect: "Allow"
       Action:
         - "s3:*"
@@ -57,6 +59,27 @@ resources:
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
         TableName: ${self:provider.environment.DYNAMODB_FINGERPRINTS}
+    
+    InformationTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: type
+            AttributeType: S
+          - 
+            AttributeName: id 
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: type
+            KeyType: HASH
+          -
+            AttributeName: id
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:provider.environment.DYNAMODB_INFORMATION}
 
 layers:
   Requirements:
