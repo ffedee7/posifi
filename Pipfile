@@ -6,6 +6,7 @@ verify_ssl = true
 [dev-packages]
 pylint = "*"
 click = "*"
+pyyaml = "*"
 
 [packages]
 dynamodb-json = "*"
