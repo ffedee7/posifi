@@ -46,7 +46,8 @@ def _get_all_parameters(current_stage):
 
 
 def _download_settings_from_ssm(stage, file_name='settings.json', include_commit_hash=False):
-    _print_block(f'Downloading setting params from SSM Parameter Store for stage "{stage}"')
+    _print_block(
+        f'Downloading setting params from SSM Parameter Store for stage "{stage}"')
 
     # get parameters and secrets from SSM
     parameters = _get_all_parameters(stage)
@@ -79,14 +80,18 @@ def posifi():
 @click.option("-s", "--stage")
 def download_params(stage):
     _download_settings_from_ssm(stage, include_commit_hash=True)
-    click.echo(click.style(f"\nOK - '{stage}' params were succesfully downloaded\n", fg="green"))
+    click.echo(click.style(
+        f"\nOK - '{stage}' params were succesfully downloaded\n", fg="green"))
+
 
 @posifi.command(name="deploy")
 @click.option("-f", "--function-name", help="function name")
 @click.option("-s", "--stage", default="dev", help="Stage ['dev'(def), 'prod']")
-def deploy_api(function_name, stage):
+@click.option("-i", "--import_settings", default=False, help="Import [true, false]")
+def deploy_api(function_name, stage, import_settings):
 
-    _download_settings_from_ssm(stage, include_commit_hash=True)
+    if import_settings:
+        _download_settings_from_ssm(stage, include_commit_hash=True)
 
     _check_requirements()
 
@@ -103,7 +108,8 @@ def deploy_api(function_name, stage):
         defined_functions = serverless_data.get("functions", {}).keys()
 
         processes = [
-            subprocess.Popen(f"sls deploy -s {stage} -f {function_name}".split(' '))
+            subprocess.Popen(
+                f"sls deploy -s {stage} -f {function_name}".split(' '))
             for function_name in defined_functions
         ]
 
@@ -137,8 +143,9 @@ def _check_requirements():
 
         os.system("docker run -v \"$PWD\":/var/task -it lambci/lambda:build-python3.7 "
                   "pip install v -r .requirements.lock -t .requirements")
-        
-        os.system('find .requirements -name "*.py[c|o]" -delete -empty -or -name "*.dist-info*" -exec rm -r "{}" \; -or -name "*__pycache__*" -delete')
+
+        os.system(
+            'find .requirements -name "*.py[c|o]" -delete -empty -or -name "*.dist-info*" -exec rm -r "{}" \; -or -name "*__pycache__*" -delete')
 
 
 if __name__ == "__main__":

@@ -1,12 +1,13 @@
+app: posifi
 service: posifi
 
 custom:
-  serviceId: ${self:service}-${opt:stage, 'dev'}
+  serviceId: ${self:service}-${opt:stage, 'dev'}-${sls:instanceId, 'test'}
 
 provider:
   name: aws
   runtime: python3.7
-  region: sa-east-1
+  region: us-east-1
   environment:
       serviceId: ${self:service}
       stage: ${opt:stage, 'dev'}
@@ -142,4 +143,20 @@ functions:
     events:
       - http:
           path: fingerprint
+          method: post
+  
+  create-floor:
+    handler: lambda_handlers/create_floor.run
+    layers:
+        - {Ref: RequirementsLambdaLayer}
+    timeout: 30
+    package:
+      include:
+        - lambda_handlers/create_floor.py
+        - commons/**
+      exclude:
+        - '**'
+    events:
+      - http:
+          path: create_floor
           method: post
